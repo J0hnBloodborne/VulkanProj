@@ -1,0 +1,27 @@
+Detecting compiler hash for triplet x64-windows...
+Compiler found: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/cl.exe
+The following packages are already installed:
+    glfw3:x64-windows@3.4#1 -- git+https://github.com/microsoft/vcpkg@d4bbd4f27c2ca619f57778985120cddcedadb1cc
+  * vcpkg-cmake:x64-windows@2024-04-23 -- git+https://github.com/microsoft/vcpkg@e74aa1e8f93278a8e71372f1fa08c3df420eb840
+  * vcpkg-cmake-config:x64-windows@2024-05-23 -- git+https://github.com/microsoft/vcpkg@97a63e4bc1a17422ffe4eff71da53b4b561a7841
+    vulkan:x64-windows@2023-12-17 -- git+https://github.com/microsoft/vcpkg@3e8d64ec799440b97c7151f97dd00a53e8e1b5ea
+  * vulkan-headers:x64-windows@1.4.304.1#1 -- git+https://github.com/microsoft/vcpkg@fcdf63adddcd20343e1847def6d582642dc88bb9
+  * vulkan-loader:x64-windows@1.4.304.1 -- git+https://github.com/microsoft/vcpkg@289901bb5f8c0556eff1349905adefde912ee81d
+glfw3 provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(glfw3 CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE glfw)
+
+glfw3 provides pkg-config modules:
+
+  # A multi-platform library for OpenGL, window and input
+  glfw3
+
+vulkan is compatible with built-in CMake targets:
+
+    # https://cmake.org/cmake/help/latest/module/FindVulkan.html
+    find_package(Vulkan REQUIRED)
+    target_link_libraries(main PRIVATE Vulkan::Vulkan)
+
+All requested installations completed successfully in: 544 us

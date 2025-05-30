@@ -1,0 +1,3 @@
+F:/Documents/VulkanProj/build/CMakeFiles/VulkanWindow.dir
+F:/Documents/VulkanProj/build/CMakeFiles/edit_cache.dir
+F:/Documents/VulkanProj/build/CMakeFiles/rebuild_cache.dir

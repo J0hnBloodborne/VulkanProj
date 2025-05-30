@@ -1,0 +1,22 @@
+# ninja log v6
+2	853	7703159706119025	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+859	2698	7703159714688743	VulkanWindow.exe	c8902ef9654bfa37
+4	349	7703293352870491	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+350	897	7703293356322238	VulkanWindow.exe	c8902ef9654bfa37
+5	405	7703300715483301	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+405	915	7703300719477967	VulkanWindow.exe	c8902ef9654bfa37
+4	339	7703301172242123	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+339	821	7703301175590801	VulkanWindow.exe	c8902ef9654bfa37
+4	336	7703301571068528	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+336	805	7703301574385310	VulkanWindow.exe	c8902ef9654bfa37
+5	339	7703302164006664	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+339	800	7703302167340036	VulkanWindow.exe	c8902ef9654bfa37
+4	1280	7703313172505022	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+1281	1762	7703313185287750	VulkanWindow.exe	c8902ef9654bfa37
+4	442	7703319079644697	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+442	926	7703319084009006	VulkanWindow.exe	c8902ef9654bfa37
+5	566	7703343038395105	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+567	1081	7703343044008522	VulkanWindow.exe	c8902ef9654bfa37
+5	582	7703347904599323	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+5	555	7703348482595108	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	aa0e673dc8e9ad4
+555	1103	7703348488107914	VulkanWindow.exe	c8902ef9654bfa37
