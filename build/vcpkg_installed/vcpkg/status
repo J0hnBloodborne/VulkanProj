@@ -51,3 +51,13 @@ Description: A stub package that ensures that Vulkan headers and a loader are av
     On Android, the NDK provides a loader at API level 24 or higher.
 Status: install ok installed
 
+Package: glm
+Version: 1.0.1
+Port-Version: 3
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: bd691c1e2ef628c9a924f7a7db4eb72bf5c18a55ec412ba8c7706677167fa11c
+Description: OpenGL Mathematics (GLM)
+Status: install ok installed
+

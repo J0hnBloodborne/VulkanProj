@@ -340,6 +340,9 @@ _VCPKG_INSTALLED_DIR:PATH=F:/Documents/VulkanProj/build/vcpkg_installed
 //The directory containing a CMake configuration file for glfw3.
 glfw3_DIR:PATH=F:/Documents/VulkanProj/build/vcpkg_installed/x64-windows/share/glfw3
 
+//The directory containing a CMake configuration file for glm.
+glm_DIR:PATH=F:/Documents/VulkanProj/build/vcpkg_installed/x64-windows/share/glm
+
 
 ########################
 # INTERNAL cache entries
