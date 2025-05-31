@@ -54,12 +54,32 @@ struct Vertex {
     }
 };
 
+// Vertex struct is already defined as in your code
+
 const std::vector<Vertex> vertices = {
-    {{ 0.0f, -0.5f, 0.0f }, {1.0f, 0.0f, 0.0f}, {0.5f, 1.0f}}, // bottom center
-    {{ 0.5f,  0.5f, 0.0f }, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}}, // top right
-    {{-0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}}, // top left
+    // Base triangle (bottom face) - Counter-clockwise when viewed from above
+    {{ 0.0f, -0.5f,  0.5f},  {1.0f, 0.0f, 0.0f}, {0.5f, 1.0f}},   // 0: Front center
+    {{-0.5f, -0.5f, -0.5f},  {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},   // 1: Back left
+    {{ 0.5f, -0.5f, -0.5f},  {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 2: Back right
+
+    // Apex
+    {{ 0.0f,  0.5f,  0.0f},  {1.0f, 1.0f, 0.0f}, {0.5f, 0.5f}},   // 3: Top apex
+
+    // Additional vertices for proper face normals
+    {{ 0.0f, -0.5f,  0.5f},  {1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 4: Front center (different UV)
+    {{-0.5f, -0.5f, -0.5f},  {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},   // 5: Back left (different UV)
+    {{ 0.5f, -0.5f, -0.5f},  {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},   // 6: Back right (different UV)
 };
 
+const std::vector<uint16_t> indices = {
+    // Base triangle
+    0, 1, 2,
+    // Side faces
+    4, 3, 5,    // Front to left side
+    0, 3, 1,    // Front to right side  
+    1, 3, 2,    // Left to back side
+    2, 3, 0     // Right to back side
+};
 struct UniformBufferObject {
     glm::mat4 mvp;
 };
@@ -368,6 +388,12 @@ private:
     VkDeviceMemory textureImageMemory;
     VkImageView textureImageView;
     VkSampler textureSampler;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
+
 
     void initWindow() {
         if (!glfwInit()) {
@@ -407,12 +433,10 @@ private:
         }
 
         // 4. Only reset fence if we're actually submitting work
-        vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
-        // 5. Record command buffer for this image
-        vkResetCommandBuffer(commandBuffers[imageIndex], 0);
-        updateUniformBuffer(imageIndex);
-        recordCommandBuffer(commandBuffers[imageIndex], imageIndex);
+        vkResetFences(device, 1, &inFlightFences[currentFrame]);        // 5. Record command buffer for this image
+        vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+        updateUniformBuffer(currentFrame);
+        recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
         // 6. Submit command buffer
         VkSubmitInfo submitInfo{};
@@ -425,7 +449,7 @@ private:
         submitInfo.pWaitDstStageMask = waitStages;
 
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+        submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
         VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
         submitInfo.signalSemaphoreCount = 1;
@@ -503,38 +527,92 @@ private:
             throw std::runtime_error("failed to create instance!");
         }
         std::cout << "Vulkan instance created successfully." << std::endl;
-    }
-    void initVulkan() {
+    }    void initVulkan() {
         createInstance();
         setupDebugMessenger();
         createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
+        createCommandPool();              // ----> Create command pool EARLY, before any operations that need it
         createSwapChain();
         createImageViews();
+        createDepthResources();           // ----> Before render pass, pipeline, framebuffers
         createRenderPass();
         createDescriptorSetLayout();      // ----> Only once, before pipeline!
         createGraphicsPipeline();
         createFramebuffers();
-        createCommandPool();
         createVertexBuffer();             // ----> Before command buffers
+        createIndexBuffer();              // ----> Before command buffers
         createUniformBuffers();
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
         createDescriptorPool();
         createDescriptorSets();
-        createCommandBuffers();           // ----> After pipeline, framebuffers, vertex buffer, descriptor sets
+        createCommandBuffers();           // ----> After command pool creation
         createSyncObjects();
     }
 
-    void createTextureImage() {
+    void createDepthResources() {
+        VkFormat depthFormat = findDepthFormat();
+        createImage(
+            swapChainExtent.width,
+            swapChainExtent.height,
+            depthFormat,
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            depthImage,
+            depthImageMemory
+        );
+        depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    }
+
+
+    void createIndexBuffer() {
+        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, indices.data(), (size_t)bufferSize);
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+        copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }    void createTextureImage() {
         int texWidth, texHeight, texChannels;
         stbi_uc* pixels = stbi_load("texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        
+        // If texture loading fails, create a simple colored texture
+        if (!pixels) {
+            std::cout << "Warning: Could not load texture.jpg, creating default texture" << std::endl;
+            texWidth = 2;
+            texHeight = 2;
+            pixels = new stbi_uc[texWidth * texHeight * 4];
+            // Create a simple checkerboard pattern
+            stbi_uc colors[2][4] = {{255, 255, 255, 255}, {255, 0, 0, 255}}; // White and red
+            for (int i = 0; i < texWidth * texHeight; i++) {
+                int color = (i % 2);
+                pixels[i*4 + 0] = colors[color][0];
+                pixels[i*4 + 1] = colors[color][1];
+                pixels[i*4 + 2] = colors[color][2];
+                pixels[i*4 + 3] = colors[color][3];
+            }
+        }
+        
         VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-        // Error check
-        if (!pixels) throw std::runtime_error("failed to load texture image!");
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -547,7 +625,12 @@ private:
         memcpy(data, pixels, static_cast<size_t>(imageSize));
         vkUnmapMemory(device, stagingBufferMemory);
 
-        stbi_image_free(pixels);
+        // Free pixels whether from stbi_load or our custom allocation
+        if (stbi_load("texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha)) {
+            stbi_image_free(pixels);
+        } else {
+            delete[] pixels;
+        }
 
         createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB,
                     VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -658,24 +741,20 @@ private:
 
         endSingleTimeCommands(commandBuffer);
     }
-    
-    void createUniformBuffers() {
+      void createUniformBuffers() {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-        size_t imageCount = swapChainImages.size();
 
-        uniformBuffers.resize(imageCount);
-        uniformBuffersMemory.resize(imageCount);
-        uniformBuffersMapped.resize(imageCount);
+        uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+        uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+        uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
-        for (size_t i = 0; i < imageCount; i++) {
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 uniformBuffers[i], uniformBuffersMemory[i]);
             vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
         }
-    }
-
-    void updateUniformBuffer(uint32_t currentImage) {
+    }    void updateUniformBuffer(uint32_t currentImage) {
         static auto startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
@@ -685,7 +764,7 @@ private:
                                 swapChainExtent.width / (float)swapChainExtent.height,
                                 0.1f, 10.0f);
         ubo.mvp[1][1] *= -1; // Vulkan weirdness
-        ubo.mvp = ubo.mvp * glm::lookAt(glm::vec3(0,0,2), glm::vec3(0,0,0), glm::vec3(0,1,0));
+        ubo.mvp = ubo.mvp * glm::lookAt(glm::vec3(2,2,2), glm::vec3(0,0,0), glm::vec3(0,1,0));
         ubo.mvp = ubo.mvp * glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
@@ -715,40 +794,36 @@ private:
         if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout!");
         }
-    }
-
-    void createDescriptorPool() {
+    }    void createDescriptorPool() {
         std::array<VkDescriptorPoolSize, 2> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
+        poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(swapChainImages.size());
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = static_cast<uint32_t>(swapChainImages.size());
+        poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor pool!");
         }
-    }
-
-    void createDescriptorSets() {
-        std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
+    }void createDescriptorSets() {
+        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         allocInfo.pSetLayouts = layouts.data();
 
-        descriptorSets.resize(swapChainImages.size());
+        descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
         if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate descriptor sets!");
         }
 
-        for (size_t i = 0; i < swapChainImages.size(); i++) {
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = uniformBuffers[i];
             bufferInfo.offset = 0;
@@ -835,6 +910,29 @@ private:
         vkBindBufferMemory(device, buffer, bufferMemory, 0);
     }
 
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+        for (VkFormat format : candidates) {
+            VkFormatProperties props;
+            vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+                return format;
+            } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+                return format;
+            }
+        }
+        throw std::runtime_error("failed to find supported format!");
+    }
+    VkFormat findDepthFormat() {
+        return findSupportedFormat(
+            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+        );
+    }
+    bool hasStencilComponent(VkFormat format) {
+        return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    }
+
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
@@ -845,7 +943,14 @@ private:
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            if (hasStencilComponent(format)) {
+                barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+            }
+        } else {
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        }
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
@@ -859,14 +964,20 @@ private:
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && 
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && 
                 newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && 
+                newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         } else {
             throw std::invalid_argument("unsupported layout transition!");
         }
@@ -964,21 +1075,20 @@ private:
                 throw std::runtime_error("failed to create sync objects!");
             }
         }
-    }
-
-    void createCommandPool() {
+    }    void createCommandPool() {
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+        
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = graphicsFamilyIndex; // whatever index you picked for graphics
+        poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
         if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create command pool!");
         }
-    }
-
-    void createCommandBuffers() {
-        commandBuffers.resize(swapChainFramebuffers.size());
+        std::cout << "Command pool created successfully." << std::endl;
+    }    void createCommandBuffers() {
+        commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -989,19 +1099,20 @@ private:
         if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
         }
+        std::cout << "Command buffers allocated successfully." << std::endl;
     }
     void createFramebuffers() {
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             VkImageView attachments[] = {
-                swapChainImageViews[i]
+                swapChainImageViews[i], depthImageView
             };
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.renderPass = renderPass;
-            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.attachmentCount = 2;
             framebufferInfo.pAttachments = attachments;
             framebufferInfo.width = swapChainExtent.width;
             framebufferInfo.height = swapChainExtent.height;
@@ -1027,15 +1138,15 @@ private:
         renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
+        VkClearValue clearValues[2];
+        clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        clearValues[1].depthStencil = {1.0f, 0};
+        renderPassInfo.clearValueCount = 2;
+        renderPassInfo.pClearValues = clearValues;
 
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-        0, 1, &descriptorSets[imageIndex], 0, nullptr);
+        0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -1054,7 +1165,8 @@ private:
         VkBuffer vertexBuffers[] = {vertexBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -1078,17 +1190,33 @@ private:
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+        VkAttachmentDescription depthAttachment{};
+        depthAttachment.format = findDepthFormat();
+        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference depthAttachmentRef{};
+        depthAttachmentRef.attachment = 1;
+        depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
+        subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
+        VkAttachmentDescription attachments[2] = { colorAttachment, depthAttachment };
+        renderPassInfo.attachmentCount = 2;
+        renderPassInfo.pAttachments = attachments;
 
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -1158,7 +1286,6 @@ private:
         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
-
         // 6. Viewport and scissor
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -1177,17 +1304,15 @@ private:
         viewportState.viewportCount = 1;
         viewportState.pViewports = nullptr;
         viewportState.scissorCount = 1;
-        viewportState.pScissors = nullptr;
-
-        // 7. Rasterizer
+        viewportState.pScissors = nullptr;        // 7. Rasterizer
         VkPipelineRasterizationStateCreateInfo rasterizer{};
         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterizer.depthClampEnable = VK_FALSE;
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.cullMode = VK_CULL_MODE_NONE;  // Disable culling to see all faces
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
         // 8. Multisampling (off)
@@ -1207,6 +1332,15 @@ private:
         colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.attachmentCount = 1;
         colorBlending.pAttachments = &colorBlendAttachment;
+
+        // 9.5 Depth and stencil testing
+        VkPipelineDepthStencilStateCreateInfo depthStencil{};
+        depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depthStencil.depthTestEnable = VK_TRUE;
+        depthStencil.depthWriteEnable = VK_TRUE;
+        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+        depthStencil.depthBoundsTestEnable = VK_FALSE;
+        depthStencil.stencilTestEnable = VK_FALSE;
 
         // 10. Pipeline layout (no uniforms/descriptors yet)
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -1229,6 +1363,7 @@ private:
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
         pipelineInfo.pColorBlendState = &colorBlending;
+        pipelineInfo.pDepthStencilState = &depthStencil;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipelineLayout;
@@ -1356,8 +1491,10 @@ private:
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
     }
-    
-    void cleanupSwapChain() {
+      void cleanupSwapChain() {
+        vkDestroyImageView(device, depthImageView, nullptr);
+        vkDestroyImage(device, depthImage, nullptr);
+        vkFreeMemory(device, depthImageMemory, nullptr);
         for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
             vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
@@ -1365,9 +1502,7 @@ private:
             vkDestroyImageView(device, swapChainImageViews[i], nullptr);
         }
         vkDestroySwapchainKHR(device, swapChain, nullptr);
-    }
-
-    void recreateSwapChain() {
+    }    void recreateSwapChain() {
         int width = 0, height = 0;
         glfwGetFramebufferSize(window, &width, &height);
         while (width == 0 || height == 0) {
@@ -1379,6 +1514,7 @@ private:
         cleanupSwapChain();
         createSwapChain();
         createImageViews();
+        createDepthResources();
         createFramebuffers();
     }
 
@@ -1493,6 +1629,12 @@ private:
         }
         vkDestroySampler(device, textureSampler, nullptr);
         std::cout << "Texture sampler destroyed." << std::endl;
+        vkDestroyImageView(device, depthImageView, nullptr);
+        std::cout << "Depth image view destroyed." << std::endl;
+        vkDestroyImage(device, depthImage, nullptr);
+        std::cout << "Depth image destroyed." << std::endl;
+        vkFreeMemory(device, depthImageMemory, nullptr);
+        std::cout << "Depth image memory freed." << std::endl;
         vkDestroyImageView(device, textureImageView, nullptr);
         std::cout << "Texture image view destroyed." << std::endl;
         vkDestroyImage(device, textureImage, nullptr);
@@ -1509,6 +1651,10 @@ private:
         std::cout << "Descriptor pool destroyed." << std::endl;
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
         std::cout << "Descriptor set layout destroyed." << std::endl;
+        vkDestroyBuffer(device, indexBuffer, nullptr);
+        std::cout << "Index buffer destroyed." << std::endl;
+        vkFreeMemory(device, indexBufferMemory, nullptr);   
+        std::cout << "Index buffer memory freed." << std::endl;
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         std::cout << "Vertex buffer destroyed." << std::endl;
         vkFreeMemory(device, vertexBufferMemory, nullptr);
@@ -1523,14 +1669,13 @@ private:
         std::cout << "Fence destroyed." << std::endl;
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroyFence(device, inFlightFences[i], nullptr);
-        }
-        std::cout << "Fence destroyed." << std::endl;
-        vkDestroyCommandPool(device, commandPool, nullptr);
-        std::cout << "Command pool destroyed." << std::endl;
+        }        std::cout << "Fence destroyed." << std::endl;
         for (auto commandBuffer : commandBuffers) {
             vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
         }
         std::cout << "Command buffers freed." << std::endl;
+        vkDestroyCommandPool(device, commandPool, nullptr);
+        std::cout << "Command pool destroyed." << std::endl;
         for (auto framebuffer : swapChainFramebuffers) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
@@ -1542,11 +1687,9 @@ private:
         vkDestroyRenderPass(device, renderPass, nullptr);
         std::cout << "Render pass destroyed." << std::endl;
         for (auto imageView : swapChainImageViews) {
-            vkDestroyImageView(device, imageView, nullptr);
-        }
-        std::cout << "Image views destroyed." << std::endl;
-        cleanupSwapChain();
-        std::cout << "Swap chain cleaned up." << std::endl;
+            vkDestroyImageView(device, imageView, nullptr);        }        std::cout << "Image views destroyed." << std::endl;
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        std::cout << "Swap chain destroyed." << std::endl;
         vkDestroySurfaceKHR(instance, surface, nullptr);
         std::cout << "Surface destroyed." << std::endl;
         vkDestroyDevice(device, nullptr);
