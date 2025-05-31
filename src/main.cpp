@@ -376,6 +376,14 @@ private:
     std::vector<VkFence> inFlightFences; // size: MAX_FRAMES_IN_FLIGHT
     size_t currentFrame = 0;
     bool framebufferResized = false;
+      // Mouse control variables
+    double lastMouseX = 400.0;
+    double lastMouseY = 300.0;
+    float rotationX = 0.0f;
+    float rotationY = 0.0f;
+    bool firstMouse = true;
+    bool mouseButtonPressed = false;
+    
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
     std::vector<VkBuffer> uniformBuffers;
@@ -398,11 +406,12 @@ private:
     void initWindow() {
         if (!glfwInit()) {
             throw std::runtime_error("Failed to initialize GLFW");
-        }
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window = glfwCreateWindow(800, 600, "Vulkan Flex", nullptr, nullptr);
-        glfwSetWindowUserPointer(window, this);
-        glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);    
+        }        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        window = glfwCreateWindow(800, 600, "Vulkan Flex", nullptr, nullptr);        glfwSetWindowUserPointer(window, this);
+        glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+        glfwSetCursorPosCallback(window, mouseCallback);
+        glfwSetMouseButtonCallback(window, mouseButtonCallback);
+        // Don't capture cursor - let user click and drag normally
         if (!window) {
             glfwTerminate();
             throw std::runtime_error("Failed to create GLFW window");
@@ -484,10 +493,55 @@ private:
         // 9. Advance to next frame
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
-    
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+      static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
         auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
+    }    static void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+        
+        // Only rotate if mouse button is held down
+        if (!app->mouseButtonPressed) {
+            app->firstMouse = true; // Reset first mouse when not dragging
+            return;
+        }
+        
+        if (app->firstMouse) {
+            app->lastMouseX = xpos;
+            app->lastMouseY = ypos;
+            app->firstMouse = false;
+        }
+
+        float xoffset = xpos - app->lastMouseX;
+        float yoffset = app->lastMouseY - ypos; // reversed since y-coordinates go from bottom to top
+
+        app->lastMouseX = xpos;
+        app->lastMouseY = ypos;
+
+        float sensitivity = 0.005f; // adjust this value to your liking
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
+
+        app->rotationY += xoffset; // yaw
+        app->rotationX += yoffset; // pitch
+
+        // constrain pitch
+        if (app->rotationX > 1.57f) // ~90 degrees
+            app->rotationX = 1.57f;
+        if (app->rotationX < -1.57f) // ~-90 degrees
+            app->rotationX = -1.57f;
+    }
+
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+        
+        if (button == GLFW_MOUSE_BUTTON_LEFT) {
+            if (action == GLFW_PRESS) {
+                app->mouseButtonPressed = true;
+                app->firstMouse = true; // Reset first mouse when starting to drag
+            } else if (action == GLFW_RELEASE) {
+                app->mouseButtonPressed = false;
+            }
+        }
     }
 
     void createInstance() {
@@ -755,17 +809,20 @@ private:
             vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
         }
     }    void updateUniformBuffer(uint32_t currentImage) {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
         UniformBufferObject ubo{};
+        
+        // Create projection matrix
         ubo.mvp = glm::perspective(glm::radians(45.0f),
                                 swapChainExtent.width / (float)swapChainExtent.height,
                                 0.1f, 10.0f);
-        ubo.mvp[1][1] *= -1; // Vulkan weirdness
+        ubo.mvp[1][1] *= -1; // Vulkan Y-coordinate flip
+        
+        // Create view matrix (camera position)
         ubo.mvp = ubo.mvp * glm::lookAt(glm::vec3(2,2,2), glm::vec3(0,0,0), glm::vec3(0,1,0));
-        ubo.mvp = ubo.mvp * glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
+        
+        // Apply mouse-controlled rotations
+        ubo.mvp = ubo.mvp * glm::rotate(glm::mat4(1.0f), rotationX, glm::vec3(1.0f, 0.0f, 0.0f)); // pitch
+        ubo.mvp = ubo.mvp * glm::rotate(glm::mat4(1.0f), rotationY, glm::vec3(0.0f, 1.0f, 0.0f)); // yaw
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
