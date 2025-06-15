@@ -1,0 +1,56 @@
+# Ignore build directories and build system files
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.sln
+*.vcxproj*
+*.user
+*.obj
+*.pdb
+*.exe
+*.ilk
+*.log
+*.dir/
+
+# Ignore Ninja build files
+.ninja*
+.ninja_deps
+.ninja_log
+
+# Ignore release and debug folders
+Release/
+Debug/
+release/
+debug/
+
+# Ignore vcpkg and dependencies
+vcpkg_installed/
+vcpkg/
+.vcpkg*
+
+# Ignore generated files
+*.spv
+*.o
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.app
+*.DS_Store
+
+# Ignore user/editor files
+*.swp
+*.swo
+*.sublime*
+*.vscode/
+.idea/
+*.code-workspace
+
+# Only track source and include files
+!src/
+!include/
+!CMakeLists.txt
+!*.md
