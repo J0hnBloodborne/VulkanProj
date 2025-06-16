@@ -1,3 +1,5 @@
+#pragma once
+
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
@@ -35,23 +37,18 @@ struct Vertex {
     }
 };
 
-// Vertex struct is already defined as in your code
-
 const std::vector<Vertex> vertices = {
     // Base triangle (bottom face) - Counter-clockwise when viewed from above
     {{ 0.0f, -0.5f,  0.5f},  {1.0f, 0.0f, 0.0f}, {0.5f, 1.0f}},   // 0: Front center
     {{-0.5f, -0.5f, -0.5f},  {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},   // 1: Back left
     {{ 0.5f, -0.5f, -0.5f},  {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},   // 2: Back right
-
     // Apex
     {{ 0.0f,  0.5f,  0.0f},  {1.0f, 1.0f, 0.0f}, {0.5f, 0.5f}},   // 3: Top apex
-
     // Additional vertices for proper face normals
     {{ 0.0f, -0.5f,  0.5f},  {1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},   // 4: Front center (different UV)
     {{-0.5f, -0.5f, -0.5f},  {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},   // 5: Back left (different UV)
     {{ 0.5f, -0.5f, -0.5f},  {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},   // 6: Back right (different UV)
 };
-
 const std::vector<uint16_t> indices = {
     // Base triangle
     0, 1, 2,
@@ -61,6 +58,7 @@ const std::vector<uint16_t> indices = {
     1, 3, 2,    // Left to back side
     2, 3, 0     // Right to back side
 };
+
 struct UniformBufferObject {
     glm::mat4 mvp;
 };

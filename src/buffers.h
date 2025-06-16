@@ -1,12 +1,12 @@
 #pragma once
 
+#include "helpers.h"
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 #include <vector>
 #include <array>
 
-#include "helpers.h"
 #include "vertex.h"
 #include "vertex_helpers.h"
 #include "HelloTriangleApplication.h"

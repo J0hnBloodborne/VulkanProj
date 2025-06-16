@@ -34,8 +34,4 @@ vulkan is compatible with built-in CMake targets:
     find_package(Vulkan REQUIRED)
     target_link_libraries(main PRIVATE Vulkan::Vulkan)
 
-<<<<<<< HEAD
-All requested installations completed successfully in: 634 us
-=======
-All requested installations completed successfully in: 537 us
->>>>>>> d76eabd87c479819151c2692f4a238fc8d041704
+All requested installations completed successfully in: 589 us

@@ -2,16 +2,13 @@ cmake_minimum_required(VERSION 3.10)
 project(VulkanWindow)
 set(CMAKE_CXX_STANDARD 17)
 
-# Force static linking of everything including C++ runtime
 set(CMAKE_BUILD_TYPE Release)
-<<<<<<< HEAD
 
 # Compiler-specific static flags
 if(MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /O2 /DNDEBUG")
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 else()
-    # MinGW/GCC - force completely static
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG -static-libgcc -static-libstdc++")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG -static-libgcc")
 endif()
@@ -19,43 +16,20 @@ endif()
 find_package(Vulkan REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
-=======
->>>>>>> d76eabd87c479819151c2692f4a238fc8d041704
 
-# Compiler-specific static flags
-if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /O2 /DNDEBUG")
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-else()
-    # MinGW/GCC - force completely static
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG -static-libgcc -static-libstdc++")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG -static-libgcc")
-endif()
-
-# Add include directory
-include_directories(${CMAKE_SOURCE_DIR}/include)
+# Add include directory for src/
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Source files
 set(SOURCES
     src/main.cpp
-    src/helpers.cpp
-    src/vertex.cpp
-    # src/shaders.cpp   # Uncomment if/when you add this file
+    src/stb_image_impl.cpp
 )
 
-<<<<<<< HEAD
-=======
 add_executable(VulkanWindow ${SOURCES})
 
-# Link Vulkan and other dependencies as needed
-find_package(Vulkan REQUIRED)
-target_link_libraries(VulkanWindow Vulkan::Vulkan)
+target_link_libraries(VulkanWindow PRIVATE Vulkan::Vulkan glfw)
 
-# If using GLFW, add:
-find_package(glfw3 CONFIG REQUIRED)
-target_link_libraries(VulkanWindow glfw)
-
->>>>>>> d76eabd87c479819151c2692f4a238fc8d041704
 # Windows-specific - no console window + static linking
 if(WIN32)
     if(MSVC)
@@ -63,7 +37,6 @@ if(WIN32)
             LINK_FLAGS "/SUBSYSTEM:WINDOWS"
         )
     else()
-        # MinGW - force completely static including C++ runtime
         target_link_libraries(VulkanWindow PRIVATE
             -static-libgcc
             -static-libstdc++
