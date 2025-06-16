@@ -39,7 +39,7 @@ inline void HelloTriangleApplication::createTextureImage() {
     vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
     vkUnmapMemory(device, stagingBufferMemory);
-    if (stbi_load("texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha)) {
+    if (stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha)) {
         stbi_image_free(pixels);
     } else {
         delete[] pixels;

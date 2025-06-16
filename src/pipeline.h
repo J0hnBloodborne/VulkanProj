@@ -68,8 +68,8 @@ inline void HelloTriangleApplication::createRenderPass() {
 }
 
 inline void HelloTriangleApplication::createGraphicsPipeline() {
-    auto vertShaderCode = readFile("shaders/vert.spv");
-    auto fragShaderCode = readFile("shaders/frag.spv");
+    auto vertShaderCode = readFile("shaders/mesh.vert.spv");
+    auto fragShaderCode = readFile("shaders/lambert.frag.spv");
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, device);
     VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, device);

@@ -1,9 +1,11 @@
 # ninja log v6
 5	7487	7717879278639577	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	8551f36e981a1a26
-5817	6420	7704263108405178	VulkanWindow.exe	5e5b046bf9f9f771
-4	4265	7717908293637785	build.ninja	b8045c38c2d4aba3
-4	4265	7717908293617734	F:/Documents/VulkanProj/build/cmake_install.cmake	b8045c38c2d4aba3
-2	3210	7717908293637785	build.ninja	b8045c38c2d4aba3
-2	3210	7717908293637785	F:/Documents/VulkanProj/build/cmake_install.cmake	b8045c38c2d4aba3
-6	3177	7717908293970516	CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj	bce72a148cd2a19b
 3177	3877	7717908325685094	VulkanWindow.exe	302d3e2001c96697
+6	3177	7717908293970516	CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj	bce72a148cd2a19b
+2	3210	7717994348509148	build.ninja	b8045c38c2d4aba3
+2	3210	7717994348462582	F:/Documents/VulkanProj/build/cmake_install.cmake	b8045c38c2d4aba3
+3	4700	7717994348509148	build.ninja	b8045c38c2d4aba3
+3	4700	7717994348509148	F:/Documents/VulkanProj/build/cmake_install.cmake	b8045c38c2d4aba3
+5	2041	7717994348775706	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	8551f36e981a1a26
+9	3226	7717994348801044	CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj	bce72a148cd2a19b
+3227	3871	7717994380973567	VulkanWindow.exe	302d3e2001c96697
