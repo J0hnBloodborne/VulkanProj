@@ -1,4 +1,5 @@
 #pragma once
+<<<<<<< HEAD
 #include <glm/glm.hpp>
 #include <cstdint>
 #include <string>
@@ -10,6 +11,10 @@ bool hasStencilComponent(VkFormat format)
 {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
+=======
+#include <vulkan/vulkan.h>
+#include <cstdint>
+>>>>>>> d76eabd87c479819151c2692f4a238fc8d041704
 
 // Vulkan helper function declarations
 VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool)
@@ -225,7 +230,14 @@ VkFormat findDepthFormat(VkPhysicalDevice physicalDevice)
             physicalDevice
         );
 }
+<<<<<<< HEAD
 
+=======
+bool hasStencilComponent(VkFormat format)
+{
+    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+>>>>>>> d76eabd87c479819151c2692f4a238fc8d041704
 
 
 std::vector<const char*> getRequiredExtensions() {
@@ -472,6 +484,7 @@ VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device
         throw std::runtime_error("failed to create shader module!");
     }
     return shaderModule;
+<<<<<<< HEAD
 }
 
 inline void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
@@ -498,4 +511,6 @@ inline void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDev
     }
 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
+=======
+>>>>>>> d76eabd87c479819151c2692f4a238fc8d041704
 }

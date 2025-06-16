@@ -1,5 +1,10 @@
 # ninja log v6
 6	5816	7704263050293966	CMakeFiles/VulkanWindow.dir/src/main.cpp.obj	22c1e10a997c24c7
 5817	6420	7704263108405178	VulkanWindow.exe	5e5b046bf9f9f771
+<<<<<<< HEAD
 5	3240	7717867420569005	build.ninja	b8045c38c2d4aba3
 5	3240	7717867420528881	F:/Documents/VulkanProj/build/cmake_install.cmake	b8045c38c2d4aba3
+=======
+5	3240	7717101428579014	build.ninja	b8045c38c2d4aba3
+5	3240	7717101428538867	F:/Documents/VulkanProj/build/cmake_install.cmake	b8045c38c2d4aba3
+>>>>>>> d76eabd87c479819151c2692f4a238fc8d041704
