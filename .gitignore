@@ -1,5 +1,6 @@
 # Ignore build directories and build system files
 build/
+build_debug/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
@@ -15,16 +16,19 @@ Makefile
 *.dir/
 
 # Ignore Ninja build files
-.ninja*
+*.ninja*
+*.ninja_deps
+*.ninja_log
 .ninja_deps
 .ninja_log
+vcpkg-manifest-install.log
 
 # Ignore release and debug folders
 Release/
 Debug/
 release/
 debug/
-
+VulkanApp_Release/
 # Ignore vcpkg and dependencies
 vcpkg_installed/
 vcpkg/
