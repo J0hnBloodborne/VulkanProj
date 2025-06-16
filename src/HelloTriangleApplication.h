@@ -67,6 +67,11 @@ public:
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
     static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
     static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    void moveForward(float deltaTime);
+    void moveBackward(float deltaTime);
+    void moveLeft(float deltaTime);
+    void moveRight(float deltaTime);
+    void turn(float xoffset, float yoffset);
     // ...add any other public methods you use...
 
     // Member variables
@@ -118,5 +123,11 @@ public:
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 5.0f);
+    glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    float yaw = -90.0f;
+    float pitch = 0.0f;
+    float speed = 5.0f;
     // ...add any other member variables you use...
 };
