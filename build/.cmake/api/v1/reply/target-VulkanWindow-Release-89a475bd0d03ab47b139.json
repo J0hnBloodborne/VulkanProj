@@ -30,7 +30,7 @@
 			{
 				"command" : 1,
 				"file" : 1,
-				"line" : 9,
+				"line" : 22,
 				"parent" : 0
 			},
 			{
@@ -42,7 +42,13 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 11,
+				"line" : 24,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 38,
 				"parent" : 0
 			}
 		]
@@ -53,7 +59,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-std=gnu++17"
+					"fragment" : "-O3 -DNDEBUG -O3 -DNDEBUG -static-libgcc -static-libstdc++ -std=gnu++17"
 				}
 			],
 			"defines" : 
@@ -92,11 +98,15 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-mwindows",
+				"fragment" : "-O3 -DNDEBUG -O3 -DNDEBUG -static-libgcc -static-libstdc++",
 				"role" : "flags"
 			},
 			{
 				"fragment" : "-mwindows",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-mwindows -static -static-libgcc -static-libstdc++",
 				"role" : "flags"
 			},
 			{
@@ -106,12 +116,22 @@
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "vcpkg_installed\\x64-windows\\debug\\lib\\glfw3dll.lib",
+				"fragment" : "vcpkg_installed\\x64-windows\\lib\\glfw3dll.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "vcpkg_installed\\x64-windows\\debug\\lib\\glm.lib",
+				"fragment" : "vcpkg_installed\\x64-windows\\lib\\glm.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-static-libgcc",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-static-libstdc++",
 				"role" : "libraries"
 			},
 			{

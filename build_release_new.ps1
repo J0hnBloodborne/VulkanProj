@@ -20,10 +20,34 @@ if (Test-Path "$vcpkgBin/glfw3.dll") {
     Copy-Item "$vcpkgBin/glfw3.dll" "VulkanApp_Release/" -Force 
     Write-Host "Copied glfw3.dll" -ForegroundColor Green
 }
+
+# Copy ALL DLLs from vcpkg (including any runtime dependencies)
 if (Test-Path "$vcpkgBin") {
     Get-ChildItem "$vcpkgBin/*.dll" | ForEach-Object {
         Copy-Item $_.FullName "VulkanApp_Release/" -Force
         Write-Host "Copied $($_.Name)" -ForegroundColor Green
+    }
+}
+
+# Also copy MinGW runtime DLLs if they exist
+$mingwPaths = @(
+    "C:\msys64\ucrt64\bin",
+    "C:\msys64\mingw64\bin", 
+    "C:\mingw64\bin"
+)
+
+$neededDlls = @("libgcc_s_seh-1.dll", "libstdc++-6.dll", "libwinpthread-1.dll")
+
+foreach ($path in $mingwPaths) {
+    if (Test-Path $path) {
+        foreach ($dll in $neededDlls) {
+            $dllPath = Join-Path $path $dll
+            if (Test-Path $dllPath) {
+                Copy-Item $dllPath "VulkanApp_Release/" -Force
+                Write-Host "Copied $dll from MinGW" -ForegroundColor Green
+            }
+        }
+        break
     }
 }
 
