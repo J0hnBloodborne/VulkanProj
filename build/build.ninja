@@ -78,8 +78,8 @@ build CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj: CXX_COMPILER__Vulk
 build VulkanWindow.exe: CXX_EXECUTABLE_LINKER__VulkanWindow_Release CMakeFiles/VulkanWindow.dir/src/main.cpp.obj CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj | vcpkg_installed/x64-windows/debug/lib/vulkan-1.lib vcpkg_installed/x64-windows/lib/glfw3dll.lib
   CONFIG = Release
   FLAGS = -O3 -DNDEBUG -O3 -DNDEBUG -static-libgcc -static-libstdc++
-  LINK_FLAGS = -mwindows -static -static-libgcc -static-libstdc++
-  LINK_LIBRARIES = vcpkg_installed/x64-windows/debug/lib/vulkan-1.lib  vcpkg_installed/x64-windows/lib/glfw3dll.lib  -static-libgcc  -static-libstdc++  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_FLAGS = -mwindows
+  LINK_LIBRARIES = vcpkg_installed/x64-windows/debug/lib/vulkan-1.lib  vcpkg_installed/x64-windows/lib/glfw3dll.lib  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\VulkanWindow.dir
   POST_BUILD = C:\Windows\system32\cmd.exe /C "cd /D F:\Documents\VulkanProj\build && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary F:/Documents/VulkanProj/build/VulkanWindow.exe -installedDir F:/Documents/VulkanProj/build/vcpkg_installed/x64-windows/bin -OutVariable out"
   PRE_LINK = cd .

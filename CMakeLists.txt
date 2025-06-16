@@ -34,15 +34,13 @@ target_link_libraries(VulkanWindow PRIVATE Vulkan::Vulkan glfw)
 if(WIN32)
     if(MSVC)
         set_target_properties(VulkanWindow PROPERTIES
-            LINK_FLAGS "/SUBSYSTEM:WINDOWS"
+            LINK_FLAGS_DEBUG ""
+            LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS"
         )
     else()
-        target_link_libraries(VulkanWindow PRIVATE
-            -static-libgcc
-            -static-libstdc++
-        )
         set_target_properties(VulkanWindow PROPERTIES
-            LINK_FLAGS "-mwindows -static -static-libgcc -static-libstdc++"
+            LINK_FLAGS_DEBUG ""
+            LINK_FLAGS_RELEASE "-mwindows"
         )
     endif()
 endif()
