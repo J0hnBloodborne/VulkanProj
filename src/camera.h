@@ -9,16 +9,14 @@
 #include "vertex.h"
 #include "vertex_helpers.h"
 
-inline void HelloTriangleApplication::updateUniformBuffer(uint32_t currentImage) {
+inline void HelloTriangleApplication::updateUniformBuffer(uint32_t currentImage, const glm::mat4& modelMatrix) {
     UniformBufferObject ubo{};
     ubo.mvp = glm::perspective(glm::radians(45.0f),
-                            swapChainExtent.width / (float)swapChainExtent.height,
-                            0.1f, 10.0f);
+    (float)swapChainExtent.width / (float)swapChainExtent.height,
+                            0.1f, 100.0f);
     ubo.mvp[1][1] *= -1;
     ubo.mvp = ubo.mvp * glm::lookAt(position, position + front, up);
-    ubo.mvp = ubo.mvp * glm::lookAt(glm::vec3(2,2,2), glm::vec3(0,0,0), glm::vec3(0,1,0));
-    ubo.mvp = ubo.mvp * glm::rotate(glm::mat4(1.0f), rotationX, glm::vec3(1.0f, 0.0f, 0.0f));
-    ubo.mvp = ubo.mvp * glm::rotate(glm::mat4(1.0f), rotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+    ubo.mvp = ubo.mvp * modelMatrix;
     memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
 
@@ -32,6 +30,7 @@ inline void HelloTriangleApplication::mouseCallback(GLFWwindow* window, double x
         app->lastMouseX = xpos;
         app->lastMouseY = ypos;
         app->firstMouse = false;
+        return; // Don't update camera on the first click
     }
     float xoffset = xpos - app->lastMouseX;
     float yoffset = app->lastMouseY - ypos;
@@ -40,12 +39,14 @@ inline void HelloTriangleApplication::mouseCallback(GLFWwindow* window, double x
     float sensitivity = 0.005f;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
-    app->rotationY += xoffset;
-    app->rotationX += yoffset;
+    app->rotationY += xoffset;   // azimuth
+    app->rotationX += yoffset;   // elevation
     if (app->rotationX > 1.57f)
         app->rotationX = 1.57f;
     if (app->rotationX < -1.57f)
         app->rotationX = -1.57f;
+    // Only update orbit angles, do not reset radius or position
+    app->updateCameraOrbit(app->orbitRadius, app->rotationY, app->rotationX);
 }
 
 inline void HelloTriangleApplication::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
@@ -62,16 +63,21 @@ inline void HelloTriangleApplication::mouseButtonCallback(GLFWwindow* window, in
 
 // WASD and mouse look for HelloTriangleApplication
 inline void HelloTriangleApplication::moveForward(float deltaTime) {
-    position += speed * front * deltaTime;
+    orbitRadius -= speed * deltaTime;
+    if (orbitRadius < 1.0f) orbitRadius = 1.0f;
+    updateCameraOrbit(orbitRadius, rotationY, rotationX);
 }
 inline void HelloTriangleApplication::moveBackward(float deltaTime) {
-    position -= speed * front * deltaTime;
+    orbitRadius += speed * deltaTime;
+    updateCameraOrbit(orbitRadius, rotationY, rotationX);
 }
 inline void HelloTriangleApplication::moveLeft(float deltaTime) {
-    position -= glm::normalize(glm::cross(front, up)) * speed * deltaTime;
+    rotationY -= 1.5f * deltaTime;
+    updateCameraOrbit(orbitRadius, rotationY, rotationX);
 }
 inline void HelloTriangleApplication::moveRight(float deltaTime) {
-    position += glm::normalize(glm::cross(front, up)) * speed * deltaTime;
+    rotationY += 1.5f * deltaTime;
+    updateCameraOrbit(orbitRadius, rotationY, rotationX);
 }
 inline void HelloTriangleApplication::turn(float xoffset, float yoffset) {
     float sensitivity = 0.1f;

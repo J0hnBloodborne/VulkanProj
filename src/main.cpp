@@ -6,10 +6,13 @@
 #include "swapchain.h"
 #include "textures.h"
 #include "camera.h"
+#include "cube_mesh.h"
 #include "window.h"
+#include "sphere_mesh.h"
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
+#include <vector>
 
 void HelloTriangleApplication::run() {
     initWindow();
@@ -32,19 +35,50 @@ void HelloTriangleApplication::initVulkan() {
     createDescriptorSetLayout();
     createGraphicsPipeline();
     createFramebuffers();
-    createVertexBuffer();
-    createIndexBuffer();
     createUniformBuffers();
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
     createDescriptorPool();
     createDescriptorSets();
+
+    // Generate mesh data first
+    generateSphereMesh(sphereVertices, sphereIndices);
+    generateCubeMesh(platformVertices, platformIndices);
+
+    // Create buffers using mesh data
+    ::createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue,
+        sphereVertices, sphereVertexBuffer, sphereVertexBufferMemory);
+    ::createIndexBuffer(device, physicalDevice, commandPool, graphicsQueue,
+        sphereIndices, sphereIndexBuffer, sphereIndexBufferMemory);
+    ::createVertexBuffer(device, physicalDevice, commandPool, graphicsQueue,
+        platformVertices, platformVertexBuffer, platformVertexBufferMemory);
+    ::createIndexBuffer(device, physicalDevice, commandPool, graphicsQueue,
+        platformIndices, platformIndexBuffer, platformIndexBufferMemory);
+    // Debug: Print buffer handles after creation
+    std::cout << "sphereVertexBuffer: " << sphereVertexBuffer << std::endl;
+    std::cout << "sphereIndexBuffer: " << sphereIndexBuffer << std::endl;
+    std::cout << "platformVertexBuffer: " << platformVertexBuffer << std::endl;
+    std::cout << "platformIndexBuffer: " << platformIndexBuffer << std::endl;
+
+    // Now create command buffers and sync objects
     createCommandBuffers();
     createSyncObjects();
+    fallingSphere = GameObject(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f));
+    groundPlatform = GameObject(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f));
+    groundPlatform.modelMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 1.0f, 10.0f));
+
+    // Set initial camera orbit angles to look at sphere center
+    rotationX = 0.0f; // elevation
+    rotationY = 0.0f; // azimuth
+    // Set initial camera position using orbit
+    updateCameraOrbit(orbitRadius, rotationY, rotationX);
 }
 
 void HelloTriangleApplication::cleanup() {
+    // Wait for device to be idle before destroying resources
+    vkDeviceWaitIdle(device);
+
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     }
@@ -140,8 +174,29 @@ void HelloTriangleApplication::drawFrame() {
     // 4. Only reset fence if we're actually submitting work
     vkResetFences(device, 1, &inFlightFences[currentFrame]);        // 5. Record command buffer for this image
     vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-    updateUniformBuffer(currentFrame);
+    updateUniformBuffer(currentFrame, fallingSphere.modelMatrix);
     recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
+
+    VkDeviceSize offsets[] = {0};
+    // Debug: Print camera and object info
+    // std::cout << "Camera position: " << position.x << ", " << position.y << ", " << position.z << std::endl;
+    // std::cout << "Camera front: " << front.x << ", " << front.y << ", " << front.z << std::endl;
+    // std::cout << "Sphere position: " << fallingSphere.position.x << ", " << fallingSphere.position.y << ", " << fallingSphere.position.z << std::endl;
+    // std::cout << "Platform position: " << groundPlatform.position.x << ", " << groundPlatform.position.y << ", " << groundPlatform.position.z << std::endl;
+    // std::cout << "Sphere indices: " << sphereIndices.size() << std::endl;
+    // std::cout << "Platform indices: " << platformIndices.size() << std::endl;
+    // std::cout << "Drawing sphere..." << std::endl;
+    // Draw falling sphere
+    // vkCmdBindVertexBuffers(commandBuffers[currentFrame], 0, 1, &sphereVertexBuffer, offsets);
+    // vkCmdBindIndexBuffer(commandBuffers[currentFrame], sphereIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    // updateUniformBuffer(currentFrame, fallingSphere.modelMatrix);
+    // vkCmdDrawIndexed(commandBuffers[currentFrame], static_cast<uint32_t>(sphereIndices.size()), 1, 0, 0, 0);
+    //std::cout << "Drawing platform..." << std::endl;
+    // Draw ground platform
+    // vkCmdBindVertexBuffers(commandBuffers[currentFrame], 0, 1, &platformVertexBuffer, offsets);
+    // vkCmdBindIndexBuffer(commandBuffers[currentFrame], platformIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    // updateUniformBuffer(currentFrame, groundPlatform.modelMatrix);
+    // vkCmdDrawIndexed(commandBuffers[currentFrame], static_cast<uint32_t>(platformIndices.size()), 1, 0, 0, 0);
 
     // 6. Submit command buffer
     VkSubmitInfo submitInfo{};
@@ -341,6 +396,10 @@ int HelloTriangleApplication::rateDeviceSuitability(VkPhysicalDevice device) {
 }
 
 VkExtent2D HelloTriangleApplication::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window) {
+    std::cerr << "[DEBUG] Entering chooseSwapExtent()" << std::endl;
+    std::cerr << "[DEBUG] capabilities.currentExtent forced: "
+        << capabilities.currentExtent.width << "x"
+        << capabilities.currentExtent.height << std::endl;
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
     } else {
@@ -353,6 +412,7 @@ VkExtent2D HelloTriangleApplication::chooseSwapExtent(const VkSurfaceCapabilitie
         };
         actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
         actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+        std::cerr << "Swap chain extent: " << actualExtent.width << "x" << actualExtent.height << std::endl;
         return actualExtent;
     }
 }

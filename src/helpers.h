@@ -261,14 +261,18 @@ const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-inline void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+inline VkResult createBuffer(
+    VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage,
+    VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create buffer!");
+    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
+    if (result != VK_SUCCESS) {
+        std::cerr << "Failed to create buffer! VkResult: " << result << std::endl;
+        return result;
     }
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
@@ -276,10 +280,13 @@ inline void createBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDev
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties, physicalDevice);
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate buffer memory!");
+    result = vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory);
+    if (result != VK_SUCCESS) {
+        std::cerr << "Failed to allocate buffer memory! VkResult: " << result << std::endl;
+        return result;
     }
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
+    return VK_SUCCESS;
 }
 
 struct SwapChainSupportDetails {

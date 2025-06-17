@@ -12,7 +12,7 @@
 
 # =============================================================================
 # Project: VulkanWindow
-# Configurations: Release
+# Configurations: Debug
 # =============================================================================
 
 #############################################
@@ -24,7 +24,7 @@ ninja_required_version = 1.5
 #############################################
 # Set configuration variable for custom commands.
 
-CONFIGURATION = Release
+CONFIGURATION = Debug
 # =============================================================================
 # Include auxiliary files.
 
@@ -49,20 +49,20 @@ cmake_ninja_workdir = F$:/Documents/VulkanProj/build/
 
 build cmake_object_order_depends_target_VulkanWindow: phony || .
 
-build CMakeFiles/VulkanWindow.dir/src/main.cpp.obj: CXX_COMPILER__VulkanWindow_unscanned_Release F$:/Documents/VulkanProj/src/main.cpp || cmake_object_order_depends_target_VulkanWindow
-  CONFIG = Release
+build CMakeFiles/VulkanWindow.dir/src/main.cpp.obj: CXX_COMPILER__VulkanWindow_unscanned_Debug F$:/Documents/VulkanProj/src/main.cpp || cmake_object_order_depends_target_VulkanWindow
+  CONFIG = Debug
   DEFINES = -DGLFW_DLL
   DEP_FILE = CMakeFiles\VulkanWindow.dir\src\main.cpp.obj.d
-  FLAGS = -O3 -DNDEBUG -O3 -DNDEBUG -static-libgcc -static-libstdc++ -std=gnu++17
+  FLAGS = -g -std=gnu++17
   INCLUDES = -IF:/Documents/VulkanProj/src -isystem F:/Documents/VulkanProj/build/vcpkg_installed/x64-windows/include
   OBJECT_DIR = CMakeFiles\VulkanWindow.dir
   OBJECT_FILE_DIR = CMakeFiles\VulkanWindow.dir\src
 
-build CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj: CXX_COMPILER__VulkanWindow_unscanned_Release F$:/Documents/VulkanProj/src/stb_image_impl.cpp || cmake_object_order_depends_target_VulkanWindow
-  CONFIG = Release
+build CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj: CXX_COMPILER__VulkanWindow_unscanned_Debug F$:/Documents/VulkanProj/src/stb_image_impl.cpp || cmake_object_order_depends_target_VulkanWindow
+  CONFIG = Debug
   DEFINES = -DGLFW_DLL
   DEP_FILE = CMakeFiles\VulkanWindow.dir\src\stb_image_impl.cpp.obj.d
-  FLAGS = -O3 -DNDEBUG -O3 -DNDEBUG -static-libgcc -static-libstdc++ -std=gnu++17
+  FLAGS = -g -std=gnu++17
   INCLUDES = -IF:/Documents/VulkanProj/src -isystem F:/Documents/VulkanProj/build/vcpkg_installed/x64-windows/include
   OBJECT_DIR = CMakeFiles\VulkanWindow.dir
   OBJECT_FILE_DIR = CMakeFiles\VulkanWindow.dir\src
@@ -75,13 +75,12 @@ build CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj: CXX_COMPILER__Vulk
 #############################################
 # Link the executable VulkanWindow.exe
 
-build VulkanWindow.exe: CXX_EXECUTABLE_LINKER__VulkanWindow_Release CMakeFiles/VulkanWindow.dir/src/main.cpp.obj CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj | vcpkg_installed/x64-windows/debug/lib/vulkan-1.lib vcpkg_installed/x64-windows/lib/glfw3dll.lib
-  CONFIG = Release
-  FLAGS = -O3 -DNDEBUG -O3 -DNDEBUG -static-libgcc -static-libstdc++
-  LINK_FLAGS = -mwindows
-  LINK_LIBRARIES = vcpkg_installed/x64-windows/debug/lib/vulkan-1.lib  vcpkg_installed/x64-windows/lib/glfw3dll.lib  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+build VulkanWindow.exe: CXX_EXECUTABLE_LINKER__VulkanWindow_Debug CMakeFiles/VulkanWindow.dir/src/main.cpp.obj CMakeFiles/VulkanWindow.dir/src/stb_image_impl.cpp.obj | vcpkg_installed/x64-windows/debug/lib/vulkan-1.lib vcpkg_installed/x64-windows/debug/lib/glfw3dll.lib
+  CONFIG = Debug
+  FLAGS = -g
+  LINK_LIBRARIES = vcpkg_installed/x64-windows/debug/lib/vulkan-1.lib  vcpkg_installed/x64-windows/debug/lib/glfw3dll.lib  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\VulkanWindow.dir
-  POST_BUILD = C:\Windows\system32\cmd.exe /C "cd /D F:\Documents\VulkanProj\build && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary F:/Documents/VulkanProj/build/VulkanWindow.exe -installedDir F:/Documents/VulkanProj/build/vcpkg_installed/x64-windows/bin -OutVariable out"
+  POST_BUILD = C:\Windows\system32\cmd.exe /C "cd /D F:\Documents\VulkanProj\build && C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/dev/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary F:/Documents/VulkanProj/build/VulkanWindow.exe -installedDir F:/Documents/VulkanProj/build/vcpkg_installed/x64-windows/debug/bin -OutVariable out"
   PRE_LINK = cd .
   TARGET_FILE = VulkanWindow.exe
   TARGET_IMPLIB = libVulkanWindow.dll.a

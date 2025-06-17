@@ -235,7 +235,7 @@ inline void HelloTriangleApplication::recordCommandBuffer(VkCommandBuffer comman
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = swapChainExtent;
     VkClearValue clearValues[2];
-    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} }; // Black background
     clearValues[1].depthStencil = {1.0f, 0};
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clearValues;
@@ -259,11 +259,25 @@ inline void HelloTriangleApplication::recordCommandBuffer(VkCommandBuffer comman
     scissor.extent = swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = {vertexBuffer};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+    // Ensure no draw calls are made outside this function!
+    // All vkCmd* draw calls must be inside vkBeginCommandBuffer/vkEndCommandBuffer and vkCmdBeginRenderPass/vkCmdEndRenderPass.
+
+    // Draw Sphere
+    {
+        VkBuffer buffers[] = { sphereVertexBuffer };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, sphereIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(sphereIndices.size()), 1, 0, 0, 0);
+    }
+    // Draw Platform
+    {
+        VkBuffer buffers[] = { platformVertexBuffer };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, platformIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(platformIndices.size()), 1, 0, 0, 0);
+    }
 
     vkCmdEndRenderPass(commandBuffer);
 
