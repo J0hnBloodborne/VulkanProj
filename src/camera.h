@@ -9,6 +9,15 @@
 #include "vertex.h"
 #include "vertex_helpers.h"
 
+inline void HelloTriangleApplication::updateCameraOrbit(float radius, float azimuth, float elevation) {
+        // Spherical coordinates
+        float x = radius * cos(elevation) * sin(azimuth);
+        float y = radius * sin(elevation);
+        float z = radius * cos(elevation) * cos(azimuth);
+        position = glm::vec3(x, y, z);
+        // front remains as set by mouse/orbit logic, do not force look-at sphere
+    }
+    
 inline void HelloTriangleApplication::updateUniformBuffer(uint32_t currentImage, const glm::mat4& modelMatrix) {
     UniformBufferObject ubo{};
     ubo.mvp = glm::perspective(glm::radians(45.0f),

@@ -70,6 +70,7 @@ public:
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
     static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
     static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    void updateCameraOrbit(float radius, float azimuth, float elevation);
     void moveForward(float deltaTime);
     void moveBackward(float deltaTime);
     void moveLeft(float deltaTime);
@@ -126,13 +127,14 @@ public:
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
-    glm::vec3 position = glm::vec3(0.0f, 2.0f, 15.0f); // Start camera further away
-    glm::vec3 front = glm::vec3(0.0f, -0.2f, -1.0f);
+    glm::vec3 position = glm::vec3(0.0f, 4.0f, 25.0f); // Start camera further away
+    glm::vec3 target = glm::vec3(0.0f, 5.0f, 0.0f); // halfway between y=10 and y=0
+    glm::vec3 front = glm::normalize(target - position/2.0f); // Look at the target
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     float yaw = -90.0f;
     float pitch = 0.0f;
     float speed = 5.0f;
-    float orbitRadius = 30.0f; // Camera starts further away and can be changed
+    float orbitRadius = 20.0f; // Camera starts further away and can be changed
     GameObject fallingSphere;
     GameObject groundPlatform;
 
@@ -152,16 +154,16 @@ public:
     VkBuffer platformIndexBuffer;
     VkDeviceMemory platformIndexBufferMemory;
 
+    // Add member for frame timing
+    double lastFrameTime = 0.0;
+    bool isSphereFalling = true;
+    const float gravity = -9.81f;
+    const float sphereRadius = 2.0f;
+    const float restitution = 0.8f; // Bounciness of the sphere
+    const float platformY = 0.0f;
+    glm::vec3 sphereVelocity = glm::vec3(0.0f); // Velocity of the sphere
+
     // Camera orbit around the ball
-    inline void updateCameraOrbit(float radius, float azimuth, float elevation) {
-        // Spherical coordinates
-        float x = fallingSphere.position.x + radius * cos(elevation) * sin(azimuth);
-        float y = fallingSphere.position.y + radius * sin(elevation);
-        float z = fallingSphere.position.z + radius * cos(elevation) * cos(azimuth);
-        position = glm::vec3(x, y, z);
-        front = glm::normalize(fallingSphere.position - position);
-        up = glm::vec3(0.0f, 1.0f, 0.0f);
-    }
 
     // ...add any other member variables you use...
 };
